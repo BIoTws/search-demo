@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+<head>
+    <title>Demo Search</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- load MUI -->
+    <link href="//cdn.muicss.com/mui-0.9.43/css/mui.min.css" rel="stylesheet" type="text/css"/>
+    <script src="//cdn.muicss.com/mui-0.9.43/js/mui.min.js"></script>
+</head>
+<body>
+<!-- example content -->
+<div class="mui-container" id="block_search" style="display: none;">
+
+    <div class="mui-container-fluid">
+        <div class="mui-row">
+            <div class="mui-col-md-8">
+                <div class="mui-panel" style="height: 204px">
+                    <div id="content-wrapper" class="mui--text-center">
+                        <h1 class="mui--text-center">Demo search</h1>
+                        <div class="mui-textfield">
+                            <input type="text" placeholder="What you need to find?" style="text-align: center"
+                                   id="search">
+                            <button class="mui-btn mui-btn--primary mui-btn--raised" style="margin-top: 15px"
+                                    onclick="search()">
+                                Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mui-col-md-4" style="font-size: 16px">
+                <div class="mui-panel">
+                    <div style="text-align: center;font-size: 20px;margin-bottom: 20px">Stats</div>
+                    <div>Balance: <span id="balance">0</span> BC</div>
+                    <div>Cost per search: <span id="cost">0</span> BC</div>
+                    <div>Searches done: <span id="done">0</span></div>
+                    <div>Already paid: <span id="paid">0</span> BC</div>
+                    <div style="margin-top: 20px; text-align: center">
+                        <button class="mui-btn mui-btn--danger" onclick="Close()">Close payment channel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="mui-container" id="block_qr" style="display: none">
+    <div class="mui--text-center">
+        <div class="mui-panel">
+            <div id="qrCode" style="display: inline-block !important;"></div>
+            <h3>Scan with BIoT Wallet to open payment channel for demo search</h3>
+        </div>
+    </div>
+</div>
+<div class="mui-container" id="block_result" style="display: none">
+    <div class="mui-panel">
+        <ul id="lres">
+        </ul>
+    </div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/qrcode.min.js"></script>
+<script>
+	let bSearch = document.getElementById('block_search');
+	let bQR = document.getElementById('block_qr');
+	let session = localStorage.getItem('session');
+	if (session) {
+		bSearch.style.display = 'block';
+	}
+	let socket = io();
+	socket.on('your_session', s => {
+		if (session) {
+			socket.emit('my_session', session);
+		} else {
+			session = s;
+			new QRCode("qrCode", {
+				text: JSON.stringify({
+					app: "oiot",
+					type: "channel",
+					step: "init",
+					pairingCode: "Ag091gR4sYL9pRn/+nU4QsXPy8pfDcxKJYOjXO27mE+K@obyte.org/bb-test#0000",
+					deposit: 20000,
+					message: session,
+                    asset: 'Clcb6ZC5br93OA7ZMFEq88i+1CkJtpxpyAz4WyinKBY='
+				}),
+				width: 200,
+				height: 200,
+				colorDark: "#000000",
+				colorLight: "#ffffff",
+				correctLevel: QRCode.CorrectLevel.Q
+			});
+			bQR.style.display = 'block';
+		}
+	});
+	socket.on('save_session', () => {
+		localStorage.setItem('session', session);
+		bQR.style.display = 'none';
+		bSearch.style.display = 'block';
+	});
+	socket.on('result', res => {
+		let html = '';
+		res.forEach(v => {
+			html += '<li>' + v + '</li>'
+		});
+		document.getElementById('lres').innerHTML = html;
+		if (html === '') {
+			document.getElementById('block_result').style.display = 'none';
+		} else {
+			document.getElementById('block_result').style.display = 'block';
+		}
+	});
+
+	socket.on('stats', (stats) => {
+		document.getElementById('balance').innerText = stats.balance;
+		document.getElementById('cost').innerText = stats.cost;
+		document.getElementById('done').innerText = stats.done;
+		document.getElementById('paid').innerText = stats.paid;
+	});
+
+	function search() {
+		let text = document.getElementById('search').value.toLowerCase();
+		if (text.length)
+			socket.emit('search', document.getElementById('search').value.toLowerCase());
+	}
+
+	function Close() {
+		socket.emit('close');
+		localStorage.removeItem('session');
+		location.reload(true);
+	}
+
+	document.getElementById('search').onkeypress = function (e) {
+		let keyCode = e.key || e.code;
+		if (keyCode === 'Enter') {
+			search();
+			return false;
+		}
+	}
+</script>
+</body>
+</html>
