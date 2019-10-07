@@ -88,7 +88,7 @@ io.on('connection', function (socket) {
 	socket.on('close', async () => {
 		let rows = await db.query("SELECT device_address, aa_address FROM sessions_search WHERE session=?", [session]);
 		if (rows.length) {
-			channels.close(rows[0].aa_address);
+			channels.close(rows[0].aa_address, console.error);
 		}
 	});
 
