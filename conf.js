@@ -25,9 +25,7 @@ exports.unconfirmedAmountsLimitsByAssetOrChannel = {
 	}
 };
 
-exports.enabledReceivers = ['obyte-messenger']; //configure the communication layers that can receive a message from peer
-// if 'http' is present, a http server will start to listen at port httpDefaultPort
-// if 'obyte-messenger' is present, messages incoming through the encypted chat layers will be treated (not possible in High availability mode)
+exports.enabledReceivers = ['obyte-messenger'];
 
 exports.httpDefaultPort = 6800;
 
